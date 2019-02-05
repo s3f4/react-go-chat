@@ -1,1 +1,4 @@
 .vscode
+react-go-chat.code-workspace
+rtsupport/node_modules
+rtsupport/package-lock.json
