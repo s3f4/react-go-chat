@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import ChannelSection from './channels/ChannelSection.jsx'
 import UserSection from './users/UserSection.jsx'
 import MessageSection from './messages/MessageSection.jsx'
+import Socket from '../socket.js'
 
 class App extends Component {
 
@@ -17,62 +18,79 @@ class App extends Component {
     }
 
     componentDidMount() {
-        let ws = this.ws = new WebSocket("ws://echo.websocket.org")
-        ws.onmessage = this.message.bind(this)
-        ws.onopen = this.open.bind(this)
-        ws.onclose = this.close.bind(this)
+        let socket = this.socket = new Socket();
+        socket.on('connect', this.onConnect.bind(this));
+        socket.on('disconnect', this.onDisconnect.bind(this));
+
+        socket.on('channel add', this.onAddChannel.bind(this));
+        socket.on('user add', this.onAddUser.bind(this));
+        socket.on('user edit', this.onEditUser.bind(this));
+        socket.on('user remove', this.onRemoveUser.bind(this));
+        socket.on('message add', this.onAddMessage.bind(this));
     }
 
-    open() {
-        this.setState({ connected: true })
+    onAddMessage(message) {
+        let { messages } = this.state;
+        messages.push(message);
+        this.setState({ messages });
     }
 
-    message(e) {
-        const event = JSON.parse(e.data);
-        if (event.name === 'channel add') {
-            this.newChannel(event.data)
-        }
+    onAddUser(user) {
+        let { users } = this.state;
+        users.push(user);
+        this.setState({ users });
     }
 
-    newChannel(channel) {
-        let { channels } = this.state;
-
-        let msg = {
-            message: 'channel add',
-            data: {
-                id: channels.length,
-                name
+    onEditUser(editUser) {
+        let { users } = this.state;
+        users = users.map(user => {
+            if (editUser.id === user.id) {
+                return editUser;
             }
-        }
-        this.ws.send(JSON.stringify(msg));
+            return user;
+        });
+        this.setState({ users });
+    }
+    onRemoveUser(removeUser) {
+        let { users } = this.state;
+        users = users.filter(user => {
+            return user.id !== removeUser.id;
+        });
+        this.setState({ users });
     }
 
-    close() {
-        this.setState({ connected: false })
+    onConnect() {
+        this.setState({ connected: true });
+        this.socket.emit('chhanel subscribe');
+        this.socket.emit('user subscribe');
     }
+
+    disConnect() {
+        this.setState({ connected: false });
+    }
+
+
+    onAddChannel(channel) {
+        let { channels } = this.state;
+        channels.push(channel);
+        this.setState({ channels });
+    }
+
     addChannel(name) {
-        let { channels } = this.state
-        channels.push({ id: channels.length, name })
-        this.setState({ channels })
-        //TODO send to server
+        this.socket.emit('channel add', { name });
     }
     setChannel(activeChannel) {
         this.setState({ activeChannel })
-        //TODO get channel messages
+        this.socket.emit('message unsubscribe')
+        this.setState({ messages: [] });
+        this.socket.emit('message subscribe', { channelId: activeChannel.id });
     }
     setUserName(name) {
-        let { users } = this.state
-        users.push({ id: users.length, name })
-        this.setState({ users })
-        //TODO send to server
+        this.socket.emit('user edit', { name });
     }
     addMessage(body) {
-        let { messages, users } = this.state
-        let createdAt = new Date
-        let author = users.length > 0 ? users[0].name : 'anonymous'
-        messages.push({ id: messages.length, body, createdAt, author })
-        this.setState({ messages })
-        //TODO send to server
+        let { activeChannel } = this.state;
+        this.socket.emit('message add', { channelId: activeChannel.id, body });
     }
 
     render() {
