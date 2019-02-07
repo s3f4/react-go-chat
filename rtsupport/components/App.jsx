@@ -3,6 +3,7 @@ import ChannelSection from './channels/ChannelSection.jsx'
 import UserSection from './users/UserSection.jsx'
 import MessageSection from './messages/MessageSection.jsx'
 import Socket from '../socket.js'
+import { EventEmitter } from 'events';
 
 class App extends Component {
 
@@ -65,7 +66,7 @@ class App extends Component {
         this.socket.emit('user subscribe');
     }
 
-    disConnect() {
+    onDisconnect() {
         this.setState({ connected: false });
     }
 
