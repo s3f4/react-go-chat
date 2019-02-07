@@ -13,7 +13,7 @@ class Socket {
         this.ee.on(name, fn);
     }
 
-    of(name, fn) {
+    off(name, fn) {
         this.ee.removeListener(name, fn);
     }
 

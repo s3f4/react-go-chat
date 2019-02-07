@@ -1,40 +1,18 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gorilla/websocket"
 	"net/http"
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
+// Channel comment
+type Channel struct {
+	Id   string
+	Name string
 }
 
 func main() {
-	http.HandleFunc("/", handler)
+	router := NewRouter()
+	router.Handle("channel add", addChannel)
+	http.Handle("/", router)
 	http.ListenAndServe(":4000", nil)
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	socket, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	for {
-		msgType, msg, err := socket.ReadMessage()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Println(string(msg))
-		if err = socket.WriteMessage(msgType, msg); err != nil {
-			fmt.Println(err)
-			return
-		}
-	}
 }
