@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 class Socket {
 
-    constructor(ws = new WebSocket("ws://echo.websocket.org"), ee = new EventEmitter) {
+    constructor(ws = new WebSocket("ws://localhost:4000"), ee = new EventEmitter) {
         this.ee = ee;
         this.ws = ws;
         ws.onmessage = this.message.bind(this)
@@ -10,6 +10,8 @@ class Socket {
     }
 
     on(name, fn) {
+        console.log("on function" + name)
+        console.log(fn)
         this.ee.on(name, fn);
     }
 
@@ -17,7 +19,7 @@ class Socket {
         this.ee.removeListener(name, fn);
     }
 
-    emit(data, fn) {
+    emit(name, data) {
         const message = JSON.stringify({ name, data });
         this.ws.send(message);
     }
